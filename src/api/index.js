@@ -1,0 +1,15 @@
+export { authAPI } from './auth';
+export { productsAPI } from './products';
+export { clientsAPI } from './clients';
+export { salesAPI } from './sales';
+export { dashboardAPI } from './dashboard';
+export { settingsAPI } from './settings';
+export { financeAPI } from './finance';
+export { marketingAPI } from './marketing';
+export { sizesAPI } from './sizes';
+export { productVariantsAPI } from './productVariants';
+export { brandsAPI } from './brands';
+export { colorsAPI } from './colors';
+export { seasonsAPI } from './seasons';
+export * as reportsAPI from './reports';
+export { default as api } from './client'; 

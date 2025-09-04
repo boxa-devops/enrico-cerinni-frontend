@@ -32,6 +32,17 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!env.example
+!env.production
+
+# temporary files
+cookies.txt
+*.tmp
+*.temp
+
+# IDE files
+*.code-workspace
+.vscode/settings.json
 
 # vercel
 .vercel
