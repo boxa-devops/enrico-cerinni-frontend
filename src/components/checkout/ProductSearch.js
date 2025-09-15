@@ -30,8 +30,38 @@ export default function ProductSearch({
     // Focus on mount
     focusInput();
 
-    // Re-focus after any user interaction or modal close
-    const handleGlobalClick = () => {
+    // Smart focus management - only refocus if user isn't interacting with other inputs
+    const handleGlobalClick = (e) => {
+      // Don't refocus if user clicked on an input, textarea, button, or any interactive element
+      if (e.target && (
+        e.target.tagName === 'INPUT' ||
+        e.target.tagName === 'TEXTAREA' ||
+        e.target.tagName === 'BUTTON' ||
+        e.target.tagName === 'SELECT' ||
+        e.target.isContentEditable ||
+        e.target.closest('input') ||
+        e.target.closest('textarea') ||
+        e.target.closest('button') ||
+        e.target.closest('select') ||
+        e.target.closest('[contenteditable]') ||
+        // Don't refocus if clicking inside payment or cart sections
+        e.target.closest('[data-no-autofocus]')
+      )) {
+        return;
+      }
+
+      // Only refocus if the current active element is not an input
+      const activeElement = document.activeElement;
+      if (activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.tagName === 'BUTTON' ||
+        activeElement.tagName === 'SELECT' ||
+        activeElement.isContentEditable
+      )) {
+        return;
+      }
+
       setTimeout(focusInput, 100);
     };
 
@@ -40,8 +70,37 @@ export default function ProductSearch({
       setTimeout(focusInput, 100);
     }
 
+    // Handle keyboard input for barcode scanning
+    const handleGlobalKeyDown = (e) => {
+      // Only auto-focus on alphanumeric keys, not on special keys
+      if (!/^[a-zA-Z0-9]$/.test(e.key)) {
+        return;
+      }
+
+      // Don't interfere if user is already typing in an input
+      const activeElement = document.activeElement;
+      if (activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.tagName === 'SELECT' ||
+        activeElement.isContentEditable
+      )) {
+        return;
+      }
+
+      // Focus the search input for barcode scanning
+      if (inputRef.current && !showVariantModal) {
+        inputRef.current.focus();
+      }
+    };
+
     document.addEventListener('click', handleGlobalClick);
-    return () => document.removeEventListener('click', handleGlobalClick);
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    
+    return () => {
+      document.removeEventListener('click', handleGlobalClick);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
   }, [showVariantModal]);
 
   const handleAddToCart = (product, scannedSku = null) => {

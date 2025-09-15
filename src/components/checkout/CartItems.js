@@ -8,7 +8,7 @@ export default function CartItems({
   removeFromCart
 }) {
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-gray-200/50 flex-1 overflow-hidden flex flex-col hover:shadow-xl transition-all duration-300">
+    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-gray-200/50 flex-1 overflow-hidden flex flex-col hover:shadow-xl transition-all duration-300" data-no-autofocus>
       <div className="flex items-center gap-2 mb-2 shrink-0">
         <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-green-600 rounded flex items-center justify-center">
           <span className="text-white text-xs font-bold">{cart.length}</span>

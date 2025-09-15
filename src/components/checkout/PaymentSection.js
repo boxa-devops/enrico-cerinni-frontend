@@ -12,7 +12,7 @@ export default function PaymentSection({
   clientDebt
 }) {
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-300">
+    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-300" data-no-autofocus>
       <div className="flex items-center gap-2 mb-2">
         <div className="w-6 h-6 bg-gradient-to-r from-orange-500 to-orange-600 rounded flex items-center justify-center">
           <CreditCard size={14} className="text-white" />
