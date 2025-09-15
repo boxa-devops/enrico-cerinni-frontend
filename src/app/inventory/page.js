@@ -16,6 +16,20 @@ import { productsAPI, brandsAPI, colorsAPI, seasonsAPI, sizesAPI, productVariant
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../utils/cn';
 
+// Simple cache for filter options
+const filterCache = {
+  brands: null,
+  categories: null,
+  seasons: null,
+  colors: null,
+  sizes: null,
+  timestamp: null,
+  isExpired: function() {
+    // Cache expires after 5 minutes
+    return !this.timestamp || Date.now() - this.timestamp > 5 * 60 * 1000;
+  }
+};
+
 // Custom hook for inventory data management
 const useInventoryData = () => {
   const [products, setProducts] = useState([]);
@@ -24,17 +38,47 @@ const useInventoryData = () => {
   const [seasons, setSeasons] = useState([]);
   const [colors, setColors] = useState([]);
   const [sizes, setSizes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [filtersLoading, setFiltersLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const loadAllData = useCallback(async () => {
+  // Load products first (critical data)
+  const loadProducts = useCallback(async () => {
     try {
-      setLoading(true);
+      setProductsLoading(true);
       setError(null);
       
-      // Load all data in parallel for better performance
-      const [productsRes, brandsRes, categoriesRes, seasonsRes, colorsRes, sizesRes] = await Promise.all([
-        productsAPI.getProducts(),
+      const productsRes = await productsAPI.getProducts();
+      
+      if (productsRes.success && productsRes.data) {
+        setProducts(productsRes.data.items || []);
+      }
+    } catch (err) {
+      console.error('Error loading products:', err);
+      setError('Mahsulotlarni yuklashda xatolik yuz berdi');
+    } finally {
+      setProductsLoading(false);
+    }
+  }, []);
+
+  // Load filter options (non-critical data)
+  const loadFilterOptions = useCallback(async () => {
+    try {
+      setFiltersLoading(true);
+      
+      // Check if we have cached data that's not expired
+      if (!filterCache.isExpired() && filterCache.brands) {
+        setBrands(filterCache.brands);
+        setCategories(filterCache.categories);
+        setSeasons(filterCache.seasons);
+        setColors(filterCache.colors);
+        setSizes(filterCache.sizes);
+        setFiltersLoading(false);
+        return;
+      }
+      
+      // Load filter options in parallel
+      const [brandsRes, categoriesRes, seasonsRes, colorsRes, sizesRes] = await Promise.all([
         brandsAPI.getBrands(),
         settingsAPI.getCategories(),
         seasonsAPI.getSeasons(),
@@ -42,31 +86,44 @@ const useInventoryData = () => {
         sizesAPI.getSizes()
       ]);
 
-      if (productsRes.success && productsRes.data) {
-        setProducts(productsRes.data.items || []);
-      }
+      // Update state and cache
       if (brandsRes.success && brandsRes.data) {
         setBrands(brandsRes.data);
+        filterCache.brands = brandsRes.data;
       }
       if (categoriesRes.success && categoriesRes.data) {
         setCategories(categoriesRes.data);
+        filterCache.categories = categoriesRes.data;
       }
       if (seasonsRes.success && seasonsRes.data) {
         setSeasons(seasonsRes.data);
+        filterCache.seasons = seasonsRes.data;
       }
       if (colorsRes.success && colorsRes.data) {
         setColors(colorsRes.data);
+        filterCache.colors = colorsRes.data;
       }
       if (sizesRes.success && sizesRes.data) {
         setSizes(sizesRes.data);
+        filterCache.sizes = sizesRes.data;
       }
+      
+      // Update cache timestamp
+      filterCache.timestamp = Date.now();
     } catch (err) {
-      console.error('Error loading inventory data:', err);
-      setError('Ma\'lumotlarni yuklashda xatolik yuz berdi');
+      console.error('Error loading filter options:', err);
+      // Don't set error for filter options as they're not critical
     } finally {
-      setLoading(false);
+      setFiltersLoading(false);
     }
   }, []);
+
+  const loadAllData = useCallback(async () => {
+    // Load products immediately
+    await loadProducts();
+    // Load filter options in background
+    loadFilterOptions();
+  }, [loadProducts, loadFilterOptions]);
 
   const refreshProducts = useCallback(async () => {
     try {
@@ -86,9 +143,13 @@ const useInventoryData = () => {
     seasons,
     colors,
     sizes,
-    loading,
+    productsLoading,
+    filtersLoading,
+    loading: productsLoading, // Keep backward compatibility
     error,
     loadAllData,
+    loadProducts,
+    loadFilterOptions,
     refreshProducts,
     setProducts
   };
@@ -235,6 +296,58 @@ const InventoryLoading = ({ message = "Inventar yuklanmoqda..." }) => (
   </div>
 );
 
+// Skeleton loading for products table
+const ProductsSkeleton = () => (
+  <Card className="overflow-hidden">
+    <div className="animate-pulse">
+      {/* Table header */}
+      <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+        <div className="grid grid-cols-7 gap-4">
+          {['Mahsulot nomi', 'Brend', 'Fasl', 'Narx', 'Zapas', 'SKU', 'Amallar'].map((header, idx) => (
+            <div key={idx} className="h-4 bg-gray-300 rounded"></div>
+          ))}
+        </div>
+      </div>
+      {/* Table rows */}
+      {[...Array(5)].map((_, idx) => (
+        <div key={idx} className="px-6 py-4 border-b border-gray-200">
+          <div className="grid grid-cols-7 gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+              <div className="h-4 bg-gray-300 rounded flex-1"></div>
+            </div>
+            <div className="h-6 bg-gray-300 rounded-full w-16"></div>
+            <div className="h-6 bg-gray-300 rounded-full w-12"></div>
+            <div className="h-4 bg-gray-300 rounded w-20"></div>
+            <div className="h-6 bg-gray-300 rounded w-12"></div>
+            <div className="h-4 bg-gray-300 rounded w-16"></div>
+            <div className="flex gap-1">
+              <div className="w-6 h-6 bg-gray-300 rounded"></div>
+              <div className="w-6 h-6 bg-gray-300 rounded"></div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </Card>
+);
+
+// Skeleton for filters
+const FiltersSkeleton = () => (
+  <Card className="p-4">
+    <div className="animate-pulse">
+      <div className="relative mb-4">
+        <div className="h-10 bg-gray-300 rounded-lg"></div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[...Array(4)].map((_, idx) => (
+          <div key={idx} className="h-10 bg-gray-300 rounded-lg"></div>
+        ))}
+      </div>
+    </div>
+  </Card>
+);
+
 export default function InventoryPage() {
   const router = useRouter();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -250,6 +363,8 @@ export default function InventoryPage() {
     seasons,
     colors,
     sizes,
+    productsLoading,
+    filtersLoading,
     loading,
     error,
     loadAllData,
@@ -544,16 +659,6 @@ export default function InventoryPage() {
     );
   }
 
-  if (loading) {
-    return (
-      <Layout>
-        <PageLayout>
-          <InventoryLoading />
-        </PageLayout>
-      </Layout>
-    );
-  }
-
   if (error) {
     return (
       <Layout>
@@ -577,75 +682,82 @@ export default function InventoryPage() {
         <div className="space-y-4">
           {/* Header */}
           <InventoryHeader
-            totalProducts={products.length}
-            filteredCount={totalItems}
+            totalProducts={productsLoading ? 0 : products.length}
+            filteredCount={productsLoading ? 0 : totalItems}
             onAddProduct={() => setShowAddModal(true)}
-            loading={loading}
+            loading={productsLoading}
           />
 
           {/* Search and Filters */}
-          <Card className="p-4">
-            <div className="relative mb-4">
-              <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input
-                placeholder="Mahsulotlarni qidirish..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 py-2"
-              />
-            </div>
+          {filtersLoading ? (
+            <FiltersSkeleton />
+          ) : (
+            <Card className="p-4">
+              <div className="relative mb-4">
+                <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Input
+                  placeholder="Mahsulotlarni qidirish..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 py-2"
+                />
+              </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="all">Barcha kategoriyalar</option>
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={selectedBrand}
-                onChange={(e) => setSelectedBrand(e.target.value)}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="all">Barcha brendlar</option>
-                {brands.map(brand => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className={`px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${filtersLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={filtersLoading}
+                >
+                  <option value="all">{filtersLoading ? 'Yuklanmoqda...' : 'Barcha kategoriyalar'}</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={selectedBrand}
+                  onChange={(e) => setSelectedBrand(e.target.value)}
+                  className={`px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${filtersLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={filtersLoading}
+                >
+                  <option value="all">{filtersLoading ? 'Yuklanmoqda...' : 'Barcha brendlar'}</option>
+                  {brands.map(brand => (
+                    <option key={brand.id} value={brand.id}>
+                      {brand.name}
+                    </option>
+                  ))}
+                </select>
 
-              <select
-                value={selectedSeason}
-                onChange={(e) => setSelectedSeason(e.target.value)}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="all">Barcha fasllar</option>
-                {seasons.map(season => (
-                  <option key={season.id} value={season.id}>
-                    {season.name}
-                  </option>
-                ))}
-              </select>
+                <select
+                  value={selectedSeason}
+                  onChange={(e) => setSelectedSeason(e.target.value)}
+                  className={`px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${filtersLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={filtersLoading}
+                >
+                  <option value="all">{filtersLoading ? 'Yuklanmoqda...' : 'Barcha fasllar'}</option>
+                  {seasons.map(season => (
+                    <option key={season.id} value={season.id}>
+                      {season.name}
+                    </option>
+                  ))}
+                </select>
 
-              <select
-                value={pageSize}
-                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value={5}>5 ta</option>
-                <option value={10}>10 ta</option>
-                <option value={20}>20 ta</option>
-                <option value={50}>50 ta</option>
-              </select>
-            </div>
-          </Card>
+                <select
+                  value={pageSize}
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                  className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value={5}>5 ta</option>
+                  <option value={10}>10 ta</option>
+                  <option value={20}>20 ta</option>
+                  <option value={50}>50 ta</option>
+                </select>
+              </div>
+            </Card>
+          )}
 
           {/* Stock Status Legend */}
           <Card className="p-4">
@@ -671,21 +783,25 @@ export default function InventoryPage() {
           </Card>
 
           {/* Products Table */}
-          <Card className="overflow-hidden">
-            <Table
-              columns={columns}
-              data={paginatedData}
-              className="rounded-lg"
-              onRowClick={handleViewProduct}
-              pagination={true}
-              pageSize={pageSize}
-              currentPage={currentPage}
-              onPageChange={handlePageChange}
-              totalItems={totalItems}
-              getRowClassName={getRowClassName}
-              highlightRows={true}
-            />
-          </Card>
+          {productsLoading ? (
+            <ProductsSkeleton />
+          ) : (
+            <Card className="overflow-hidden">
+              <Table
+                columns={columns}
+                data={paginatedData}
+                className="rounded-lg"
+                onRowClick={handleViewProduct}
+                pagination={true}
+                pageSize={pageSize}
+                currentPage={currentPage}
+                onPageChange={handlePageChange}
+                totalItems={totalItems}
+                getRowClassName={getRowClassName}
+                highlightRows={true}
+              />
+            </Card>
+          )}
         </div>
 
         {/* Product Creation Modal */}
