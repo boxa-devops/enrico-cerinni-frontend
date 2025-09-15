@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Eye, Edit, Trash2, Building2, Search, Filter } from 'lucide-react';
-import { Card } from '../../ui';
+import { Card } from '../ui';
 
 const SuppliersTab = ({ 
   suppliers, 
@@ -142,7 +142,8 @@ const SuppliersTab = ({
               </div>
             )}
           </div>
-        ) : (
+) : (
+          <>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-100 border-b border-gray-200">
@@ -209,7 +210,6 @@ const SuppliersTab = ({
               </table>
             </div>
             
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
                 <div className="flex items-center justify-between">
@@ -235,6 +235,7 @@ const SuppliersTab = ({
                 </div>
               </div>
             )}
+          </>
         )}
       </Card>
     </div>

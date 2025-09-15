@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Eye, Edit, Trash2, Search, Filter, Calendar } from 'lucide-react';
-import { Card } from '../../ui';
+import { Card } from '../ui';
 
 const ExpensesTab = ({ 
   expenses, 
