@@ -5,7 +5,7 @@ export const colorsAPI = {
   // Get all colors
   getColors: async () => {
     try {
-      const response = await api.get('/colors/');
+      const response = await api.get('/colors');
       return validateApiResponse(response.data);
     } catch (error) {
       console.error('Get colors API error:', error);
@@ -16,7 +16,7 @@ export const colorsAPI = {
   // Create new color
   createColor: async (colorData) => {
     try {
-      const response = await api.post('/colors/', colorData);
+      const response = await api.post('/colors', colorData);
       return validateApiResponse(response.data);
     } catch (error) {
       console.error('Create color API error:', error);

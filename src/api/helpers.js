@@ -22,7 +22,7 @@ export const createCrudApi = (basePath) => {
   const normalizedBase = basePath.replace(/\/$/, '');
 
   return {
-    list: (params = {}) => request(api.get(`${normalizedBase}/`, { params })),
+    list: (params = {}) => request(api.get(`${normalizedBase}`, { params })),
     get: (id) => request(api.get(`${normalizedBase}/${id}`)),
     create: (data) => request(api.post(`${normalizedBase}/`, data)),
     update: (id, data) => request(api.put(`${normalizedBase}/${id}`, data)),
