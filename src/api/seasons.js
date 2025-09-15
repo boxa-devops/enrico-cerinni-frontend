@@ -5,7 +5,7 @@ export const seasonsAPI = {
   // Get all seasons
   getSeasons: async () => {
     try {
-      const response = await api.get('/seasons/');
+      const response = await api.get('/seasons');
       return validateApiResponse(response.data);
     } catch (error) {
       console.error('Get seasons API error:', error);
@@ -16,7 +16,7 @@ export const seasonsAPI = {
   // Create new season
   createSeason: async (seasonData) => {
     try {
-      const response = await api.post('/seasons/', seasonData);
+      const response = await api.post('/seasons', seasonData);
       return validateApiResponse(response.data);
     } catch (error) {
       console.error('Create season API error:', error);

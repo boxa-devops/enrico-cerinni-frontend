@@ -5,7 +5,7 @@ export const sizesAPI = {
   // Get all sizes
   getSizes: async () => {
     try {
-      const response = await api.get('/sizes/');
+      const response = await api.get('/sizes');
       return validateApiResponse(response.data);
     } catch (error) {
       console.error('Get sizes API error:', error);
@@ -16,7 +16,7 @@ export const sizesAPI = {
   // Create new size
   createSize: async (sizeData) => {
     try {
-      const response = await api.post('/sizes/', sizeData);
+      const response = await api.post('/sizes', sizeData);
       return validateApiResponse(response.data);
     } catch (error) {
       console.error('Create size API error:', error);

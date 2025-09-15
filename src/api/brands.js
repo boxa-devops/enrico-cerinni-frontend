@@ -5,7 +5,7 @@ export const brandsAPI = {
   // Get all brands
   getBrands: async () => {
     try {
-      const response = await api.get('/brands/');
+      const response = await api.get('/brands');
       return validateApiResponse(response.data);
     } catch (error) {
       console.error('Get brands API error:', error);
@@ -16,7 +16,7 @@ export const brandsAPI = {
   // Create new brand
   createBrand: async (brandData) => {
     try {
-      const response = await api.post('/brands/', brandData);
+      const response = await api.post('/brands', brandData);
       return validateApiResponse(response.data);
     } catch (error) {
       console.error('Create brand API error:', error);

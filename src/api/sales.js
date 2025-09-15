@@ -5,7 +5,7 @@ export const salesAPI = {
   // Create new sale
   createSale: async (saleData) => {
     try {
-      const response = await api.post('/sales/', saleData);
+      const response = await api.post('/sales', saleData);
       return validateApiResponse(response.data);
     } catch (error) {
       console.error('Create sale API error:', error);
@@ -16,7 +16,7 @@ export const salesAPI = {
   // Get all sales with filtering and pagination
   getSales: async (params = {}) => {
     try {
-      const response = await api.get('/sales/', { params });
+      const response = await api.get('/sales', { params });
       return validateApiResponse(response.data);
     } catch (error) {
       console.error('Get sales API error:', error);
