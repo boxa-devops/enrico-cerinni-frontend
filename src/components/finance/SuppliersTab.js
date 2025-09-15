@@ -235,7 +235,6 @@ const SuppliersTab = ({
                 </div>
               </div>
             )}
-          )}
         )}
       </Card>
     </div>
