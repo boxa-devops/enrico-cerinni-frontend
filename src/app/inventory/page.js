@@ -162,7 +162,7 @@ const useProductFilters = (products) => {
   const [selectedSeason, setSelectedSeason] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
 
   const filteredProducts = useMemo(() => {
     if (!Array.isArray(products)) return [];
@@ -759,28 +759,55 @@ export default function InventoryPage() {
             </Card>
           )}
 
-          {/* Stock Status Legend */}
-          <Card className="p-4">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Zapas holati bo'yicha ranglar:</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">Tugagan (0)</span>
+          {/* Stock Status Legend & Pagination Summary */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card className="p-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">Zapas holati bo'yicha ranglar:</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600">Tugagan (0)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600">Kam (≤5)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600">O'rtacha (≤20)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600">Yetarli ({'>'}20)</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">Kam (≤5)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">O'rtacha (≤20)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">Yetarli ({'>'}20)</span>
-              </div>
-            </div>
-          </Card>
+            </Card>
+
+            {/* Pagination Summary */}
+            {!productsLoading && totalItems > 0 && (
+              <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+                <h3 className="text-sm font-medium text-gray-900 mb-3">Sahifalash ma'lumoti:</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Jami natijalar:</span>
+                    <span className="text-sm font-semibold text-blue-600">{totalItems}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Sahifa o'lchami:</span>
+                    <span className="text-sm font-semibold text-blue-600">{pageSize}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Jami sahifalar:</span>
+                    <span className="text-sm font-semibold text-blue-600">{Math.ceil(totalItems / pageSize)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Joriy sahifa:</span>
+                    <span className="text-sm font-semibold text-blue-600">{currentPage}</span>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </div>
 
           {/* Products Table */}
           {productsLoading ? (

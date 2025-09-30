@@ -245,15 +245,29 @@ const Table = ({
       </div>
 
       {/* Pagination */}
-      {pagination && totalPages > 1 && (
-        <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-t border-gray-200">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-700">
-              {Math.min((currentPage - 1) * pageSize + 1, totalItems)} - {Math.min(currentPage * pageSize, totalItems)} / {totalItems}
+      {pagination && totalItems > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200">
+          <div className="flex items-center gap-4 mb-3 sm:mb-0">
+            <span className="text-sm text-gray-700 font-medium">
+              {Math.min((currentPage - 1) * pageSize + 1, totalItems)} - {Math.min(currentPage * pageSize, totalItems)} / {totalItems} natija
             </span>
+            {totalPages > 1 && (
+              <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full">
+                {totalPages} sahifa
+              </span>
+            )}
           </div>
           
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => onPageChange(1)}
+              className="text-xs"
+            >
+              Birinchi
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -264,9 +278,57 @@ const Table = ({
               Oldingi
             </Button>
             
-            <span className="text-sm text-gray-700 px-2">
-              {currentPage} / {totalPages}
-            </span>
+            <div className="flex items-center gap-1">
+              {/* Page numbers */}
+              {totalPages <= 5 ? (
+                // Show all pages if 5 or fewer
+                [...Array(totalPages)].map((_, i) => (
+                  <Button
+                    key={i + 1}
+                    variant={currentPage === i + 1 ? "primary" : "ghost"}
+                    size="sm"
+                    onClick={() => onPageChange(i + 1)}
+                    className="min-w-[32px] h-8"
+                  >
+                    {i + 1}
+                  </Button>
+                ))
+              ) : (
+                // Show ellipsis for more pages
+                <>
+                  {currentPage > 3 && (
+                    <>
+                      <Button variant="ghost" size="sm" onClick={() => onPageChange(1)} className="min-w-[32px] h-8">1</Button>
+                      {currentPage > 4 && <span className="text-gray-400 px-1">...</span>}
+                    </>
+                  )}
+                  
+                  {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                    const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                    if (pageNum > totalPages) return null;
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "primary" : "ghost"}
+                        size="sm"
+                        onClick={() => onPageChange(pageNum)}
+                        className="min-w-[32px] h-8"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                  
+                  {currentPage < totalPages - 2 && (
+                    <>
+                      {currentPage < totalPages - 3 && <span className="text-gray-400 px-1">...</span>}
+                      <Button variant="ghost" size="sm" onClick={() => onPageChange(totalPages)} className="min-w-[32px] h-8">{totalPages}</Button>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
             
             <Button
               variant="ghost"
@@ -276,6 +338,15 @@ const Table = ({
               rightIcon={<ChevronRight className="h-4 w-4" />}
             >
               Keyingi
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => onPageChange(totalPages)}
+              className="text-xs"
+            >
+              Oxirgi
             </Button>
           </div>
         </div>
