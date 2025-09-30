@@ -905,6 +905,7 @@ export default function InventoryPage() {
                 </div>
               </div>
             </Card>
+          </div>
 
           {/* Products Table */}
           {productsLoading ? (
