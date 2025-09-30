@@ -48,7 +48,7 @@ const useInventoryData = () => {
       setProductsLoading(true);
       setError(null);
       
-      const productsRes = await productsAPI.getProducts();
+      const productsRes = await productsAPI.getProducts({ limit: 1000 }); // Fetch up to 1000 products
       
       if (productsRes.success && productsRes.data) {
         setProducts(productsRes.data.items || []);
@@ -127,7 +127,7 @@ const useInventoryData = () => {
 
   const refreshProducts = useCallback(async () => {
     try {
-      const response = await productsAPI.getProducts();
+      const response = await productsAPI.getProducts({ limit: 1000 }); // Fetch up to 1000 products
       if (response.success && response.data) {
         setProducts(response.data.items || []);
       }

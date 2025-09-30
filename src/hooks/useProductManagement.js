@@ -26,7 +26,7 @@ export const useProductManagement = (itemsPerPage = 10) => {
   const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await productsAPI.getProducts();
+      const response = await productsAPI.getProducts({ limit: 1000 }); // Fetch up to 1000 products
       if (response.success && response.data) {
         setProducts(response.data.items || []);
         setTotalItems(response.data.total || 0);

@@ -18,7 +18,7 @@ export const useProductSearch = () => {
     try {
       const response = await productsAPI.getProducts({ 
         search: term, 
-        limit: SEARCH_CONFIG.DEFAULT_LIMIT 
+        limit: SEARCH_CONFIG.MAX_LIMIT // Use MAX_LIMIT for search to show more results
       });
       
       if (response.success && response.data) {
@@ -39,7 +39,7 @@ export const useProductSearch = () => {
     setSearchLoading(true);
     try {
       const response = await productsAPI.getProducts({ 
-        limit: SEARCH_CONFIG.DEFAULT_LIMIT,
+        limit: SEARCH_CONFIG.MAX_LIMIT, // Use MAX_LIMIT to show more recent products
         sort_by: 'created_at',
         sort_order: 'desc'
       });

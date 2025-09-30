@@ -17,8 +17,8 @@ export const API_CONFIG = {
 // Search and pagination
 export const SEARCH_CONFIG = {
   DEBOUNCE_DELAY: 300,
-  DEFAULT_LIMIT: 10,
-  MAX_LIMIT: 100,
+  DEFAULT_LIMIT: 20, // Increased from 10 to 20 for better UX
+  MAX_LIMIT: 1000, // Increased from 100 to 1000 to support more products
 };
 
 // Payment methods
