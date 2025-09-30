@@ -48,13 +48,77 @@ const useInventoryData = () => {
       setProductsLoading(true);
       setError(null);
       
-      const productsRes = await productsAPI.getProducts({ limit: 1000 }); // Fetch up to 1000 products
+      console.log('🔄 Loading ALL products by fetching all pages...');
+      
+      // First, get the first page to understand pagination structure
+      const firstPageRes = await productsAPI.getProducts({ page: 1, size: 100 });
+      console.log('📦 First page response:', firstPageRes);
+      
+      if (!firstPageRes.success || !firstPageRes.data) {
+        throw new Error('Failed to fetch first page');
+      }
+      
+      const pagination = firstPageRes.data.pagination;
+      const totalPages = pagination?.pages || 1;
+      const totalItems = pagination?.total || firstPageRes.data.items?.length || 0;
+      
+      console.log('📊 Pagination info:', { totalPages, totalItems });
+      
+      // If there's only one page or we got all items, use what we have
+      if (totalPages <= 1 || firstPageRes.data.items?.length >= totalItems) {
+        console.log('✅ All products in first page');
+        var productsRes = firstPageRes;
+      } else {
+        // Fetch all pages
+        console.log('🔄 Fetching all', totalPages, 'pages...');
+        const allItems = [...firstPageRes.data.items];
+        
+        // Fetch remaining pages in parallel
+        const pagePromises = [];
+        for (let page = 2; page <= totalPages; page++) {
+          pagePromises.push(productsAPI.getProducts({ page, size: 100 }));
+        }
+        
+        const pageResults = await Promise.all(pagePromises);
+        
+        // Combine all items
+        pageResults.forEach((pageRes, index) => {
+          if (pageRes.success && pageRes.data?.items) {
+            allItems.push(...pageRes.data.items);
+            console.log(`📄 Page ${index + 2}: ${pageRes.data.items.length} items`);
+          }
+        });
+        
+        console.log('🎯 Total items collected:', allItems.length);
+        
+        // Create combined response
+        var productsRes = {
+          ...firstPageRes,
+          data: {
+            ...firstPageRes.data,
+            items: allItems
+          }
+        };
+      }
+      
+      console.log('📦 API Response:', {
+        success: productsRes.success,
+        dataExists: !!productsRes.data,
+        itemsLength: productsRes.data?.items?.length,
+        totalFromAPI: productsRes.data?.total,
+        fullResponse: productsRes
+      });
       
       if (productsRes.success && productsRes.data) {
-        setProducts(productsRes.data.items || []);
+        const items = productsRes.data.items || [];
+        console.log('✅ Setting products:', items.length, 'items');
+        setProducts(items);
+      } else {
+        console.log('❌ API response failed or no data');
+        setProducts([]);
       }
     } catch (err) {
-      console.error('Error loading products:', err);
+      console.error('❌ Error loading products:', err);
       setError('Mahsulotlarni yuklashda xatolik yuz berdi');
     } finally {
       setProductsLoading(false);
@@ -127,10 +191,36 @@ const useInventoryData = () => {
 
   const refreshProducts = useCallback(async () => {
     try {
-      const response = await productsAPI.getProducts({ limit: 1000 }); // Fetch up to 1000 products
-      if (response.success && response.data) {
-        setProducts(response.data.items || []);
+      // Use the same logic as loadProducts to get all items
+      const firstPageRes = await productsAPI.getProducts({ page: 1, size: 100 });
+      
+      if (!firstPageRes.success || !firstPageRes.data) {
+        throw new Error('Failed to fetch products');
       }
+      
+      const pagination = firstPageRes.data.pagination;
+      const totalPages = pagination?.pages || 1;
+      const totalItems = pagination?.total || firstPageRes.data.items?.length || 0;
+      
+      let allItems = [...firstPageRes.data.items];
+      
+      // Fetch remaining pages if needed
+      if (totalPages > 1 && firstPageRes.data.items?.length < totalItems) {
+        const pagePromises = [];
+        for (let page = 2; page <= totalPages; page++) {
+          pagePromises.push(productsAPI.getProducts({ page, size: 100 }));
+        }
+        
+        const pageResults = await Promise.all(pagePromises);
+        pageResults.forEach((pageRes) => {
+          if (pageRes.success && pageRes.data?.items) {
+            allItems.push(...pageRes.data.items);
+          }
+        });
+      }
+      
+      console.log('🔄 Refreshed products:', allItems.length, 'total');
+      setProducts(allItems);
     } catch (err) {
       console.error('Error refreshing products:', err);
     }
@@ -165,37 +255,69 @@ const useProductFilters = (products) => {
   const [pageSize, setPageSize] = useState(5);
 
   const filteredProducts = useMemo(() => {
-    if (!Array.isArray(products)) return [];
+    console.log('🔍 Filtering products:', {
+      totalProducts: products?.length || 0,
+      searchTerm,
+      selectedBrand,
+      selectedSeason,
+      selectedCategory
+    });
+    
+    if (!Array.isArray(products)) {
+      console.log('❌ Products is not an array:', products);
+      return [];
+    }
     
     let filtered = products;
+    console.log('📊 Starting with', filtered.length, 'products');
 
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
+      const beforeSearch = filtered.length;
       filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(searchLower) ||
         (product.brand_name && product.brand_name.toLowerCase().includes(searchLower))
       );
+      console.log('🔎 After search filter:', filtered.length, 'products (was', beforeSearch, ')');
     }
 
     if (selectedBrand !== 'all') {
+      const beforeBrand = filtered.length;
       filtered = filtered.filter(product => product.brand_id === parseInt(selectedBrand));
+      console.log('🏷️ After brand filter:', filtered.length, 'products (was', beforeBrand, ')');
     }
 
     if (selectedSeason !== 'all') {
+      const beforeSeason = filtered.length;
       filtered = filtered.filter(product => product.season_id === parseInt(selectedSeason));
+      console.log('🌤️ After season filter:', filtered.length, 'products (was', beforeSeason, ')');
     }
 
     if (selectedCategory !== 'all') {
+      const beforeCategory = filtered.length;
       filtered = filtered.filter(product => product.category_id === parseInt(selectedCategory));
+      console.log('📂 After category filter:', filtered.length, 'products (was', beforeCategory, ')');
     }
 
+    console.log('✅ Final filtered products:', filtered.length);
     return filtered;
   }, [products, searchTerm, selectedBrand, selectedSeason, selectedCategory]);
 
   const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    return filteredProducts.slice(startIndex, endIndex);
+    const paginated = filteredProducts.slice(startIndex, endIndex);
+    
+    console.log('📄 Pagination:', {
+      currentPage,
+      pageSize,
+      startIndex,
+      endIndex,
+      totalFiltered: filteredProducts.length,
+      paginatedCount: paginated.length
+    });
+    
+    return paginated;
   }, [filteredProducts, currentPage, pageSize]);
 
   const totalItems = useMemo(() => filteredProducts.length, [filteredProducts]);
@@ -368,6 +490,7 @@ export default function InventoryPage() {
     loading,
     error,
     loadAllData,
+    loadProducts,
     refreshProducts,
     setProducts
   } = useInventoryData();
@@ -783,30 +906,48 @@ export default function InventoryPage() {
               </div>
             </Card>
 
-            {/* Pagination Summary */}
-            {!productsLoading && totalItems > 0 && (
-              <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Sahifalash ma'lumoti:</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Jami natijalar:</span>
-                    <span className="text-sm font-semibold text-blue-600">{totalItems}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Sahifa o'lchami:</span>
-                    <span className="text-sm font-semibold text-blue-600">{pageSize}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Jami sahifalar:</span>
-                    <span className="text-sm font-semibold text-blue-600">{Math.ceil(totalItems / pageSize)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Joriy sahifa:</span>
-                    <span className="text-sm font-semibold text-blue-600">{currentPage}</span>
-                  </div>
+          {/* Pagination Summary */}
+          {!productsLoading && (
+            <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-gray-900">Debug ma'lumoti:</h3>
+                <Button 
+                  onClick={loadProducts} 
+                  size="sm" 
+                  variant="ghost"
+                  className="text-xs"
+                >
+                  🔄 Qayta yuklash
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Raw products count:</span>
+                  <span className="text-sm font-semibold text-blue-600">{products?.length || 0}</span>
                 </div>
-              </Card>
-            )}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Filtered products:</span>
+                  <span className="text-sm font-semibold text-blue-600">{totalItems}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Paginated products:</span>
+                  <span className="text-sm font-semibold text-blue-600">{paginatedData?.length || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Sahifa o'lchami:</span>
+                  <span className="text-sm font-semibold text-blue-600">{pageSize}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Jami sahifalar:</span>
+                  <span className="text-sm font-semibold text-blue-600">{Math.ceil(totalItems / pageSize)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Joriy sahifa:</span>
+                  <span className="text-sm font-semibold text-blue-600">{currentPage}</span>
+                </div>
+              </div>
+            </Card>
+          )}
           </div>
 
           {/* Products Table */}

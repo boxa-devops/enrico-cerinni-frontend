@@ -26,11 +26,37 @@ export const useProductManagement = (itemsPerPage = 10) => {
   const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await productsAPI.getProducts({ limit: 1000 }); // Fetch up to 1000 products
-      if (response.success && response.data) {
-        setProducts(response.data.items || []);
-        setTotalItems(response.data.total || 0);
+      
+      // Get first page to understand pagination
+      const firstPageRes = await productsAPI.getProducts({ page: 1, size: 100 });
+      
+      if (!firstPageRes.success || !firstPageRes.data) {
+        throw new Error('Failed to fetch products');
       }
+      
+      const pagination = firstPageRes.data.pagination;
+      const totalPages = pagination?.pages || 1;
+      const totalItems = pagination?.total || firstPageRes.data.items?.length || 0;
+      
+      let allItems = [...firstPageRes.data.items];
+      
+      // Fetch remaining pages if needed
+      if (totalPages > 1 && firstPageRes.data.items?.length < totalItems) {
+        const pagePromises = [];
+        for (let page = 2; page <= totalPages; page++) {
+          pagePromises.push(productsAPI.getProducts({ page, size: 100 }));
+        }
+        
+        const pageResults = await Promise.all(pagePromises);
+        pageResults.forEach((pageRes) => {
+          if (pageRes.success && pageRes.data?.items) {
+            allItems.push(...pageRes.data.items);
+          }
+        });
+      }
+      
+      setProducts(allItems);
+      setTotalItems(totalItems);
     } catch (error) {
       console.error('Error loading products:', error);
       setProducts([]);
