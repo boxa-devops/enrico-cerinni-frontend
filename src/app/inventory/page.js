@@ -906,50 +906,6 @@ export default function InventoryPage() {
               </div>
             </Card>
 
-          {/* Pagination Summary */}
-          {!productsLoading && (
-            <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-gray-900">Debug ma'lumoti:</h3>
-                <Button 
-                  onClick={loadProducts} 
-                  size="sm" 
-                  variant="ghost"
-                  className="text-xs"
-                >
-                  🔄 Qayta yuklash
-                </Button>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Raw products count:</span>
-                  <span className="text-sm font-semibold text-blue-600">{products?.length || 0}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Filtered products:</span>
-                  <span className="text-sm font-semibold text-blue-600">{totalItems}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Paginated products:</span>
-                  <span className="text-sm font-semibold text-blue-600">{paginatedData?.length || 0}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Sahifa o'lchami:</span>
-                  <span className="text-sm font-semibold text-blue-600">{pageSize}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Jami sahifalar:</span>
-                  <span className="text-sm font-semibold text-blue-600">{Math.ceil(totalItems / pageSize)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Joriy sahifa:</span>
-                  <span className="text-sm font-semibold text-blue-600">{currentPage}</span>
-                </div>
-              </div>
-            </Card>
-          )}
-          </div>
-
           {/* Products Table */}
           {productsLoading ? (
             <ProductsSkeleton />
